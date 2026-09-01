@@ -19,6 +19,50 @@ function arcFromTangent(p0,length,a0,a1,N=70){if(length<=0)return [{x:p0.x,y:p0.
 function deriveP(K,l1,bp,bk){if(l1<=0)return {...K};const d=bp-bk;if(Math.abs(d)<1e-10)return {x:K.x-l1*Math.cos(bk),y:K.y+l1*Math.sin(bk)};const R=l1/d;const dx=R*(Math.sin(bp)-Math.sin(bk));const dy=R*(Math.cos(bp)-Math.cos(bk));return {x:K.x-dx,y:K.y-dy};}
 function deriveL(K,l2,bk,bl){if(l2<=0)return {...K};const d=bk-bl;if(Math.abs(d)<1e-10)return {x:K.x+l2*Math.cos(bk),y:K.y-l2*Math.sin(bk)};const R=l2/d;const dx=R*(Math.sin(bk)-Math.sin(bl));const dy=R*(Math.cos(bk)-Math.cos(bl));return {x:K.x+dx,y:K.y+dy};}
 function solve3(A,b){const M=A.map((r,i)=>[...r,b[i]]);for(let c=0;c<3;c++){let p=c;for(let r=c+1;r<3;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)return null;[M[c],M[p]]=[M[p],M[c]];const q=M[c][c];for(let j=c;j<4;j++)M[c][j]/=q;for(let r=0;r<3;r++)if(r!==c){const f=M[r][c];for(let j=c;j<4;j++)M[r][j]-=f*M[c][j]}}return [M[0][3],M[1][3],M[2][3]];}
-function lowerTransitionDefault(L,betaL,r2,N=100){if(!(r2>0)||!(betaL>0)){const U={x:L.x+Math.max(20,r2||20),y:L.y};return {points:linePoints(L,U,N),U,mode:'fallback'};}const C={x:L.x+r2*Math.sin(betaL),y:L.y+r2*Math.cos(betaL)};const U={x:C.x,y:C.y-r2};const a0=Math.atan2(L.y-C.y,L.x-C.x);const a1=-Math.PI/2;let da=a1-a0;while(da<=0)da+=Math.PI*2;if(da>Math.PI)da-=Math.PI*2;const out=[];for(let i=0;i<=N;i++){const a=a0+da*i/N;out.push({x:C.x+r2*Math.cos(a),y:C.y+r2*Math.sin(a)});}return {points:out,U,mode:'r2 → łuk kołowy'};}
-function lowerTransitionToExactU(L,U,betaL,r2,N=110){const dx=U.x-L.x;if(!(dx>0))return {points:linePoints(L,U,N),mode:'bad-endpoint'};const points=hermiteX(L.x,L.y,-Math.tan(betaL),U.x,U.y,0,N);return {points,mode:'r2x/r2y → U exact; gładka styczna L→U'};}
-function buildInrun(ir){const alpha=deg(num(ir,'alpha',10)),gamma=deg(num(ir,'gamma',32));const t=num(ir,'t',5),r1=num(ir,'r1',80),e=num(ir,'e',80);const E2={x:-t*Math.cos(alpha),y:t*Math.sin(alpha)};const delta=Math.max(0,gamma-alpha);let transition=[],E1=E2,transitionLen=0;if(r1>0&&delta>1e-8){const d=2*r1*Math.sin(delta)*Math.cos(delta)**2;const C=Math.tan(delta)/(3*d*d);const f=Math.tan(delta)*d/3;transitionLen=d*(1+0.1*Math.tan(delta)**2);E1={x:-(t*Math.cos(alpha)+f*Math.sin(gamma)+d*Math.cos(gamma)),y:t*Math.sin(alpha)-f*Math.cos(gamma)+d*Math.sin(gamma)};for(let i=0;i<=100;i++){const xi=d*i/100,eta=C*xi**3;transition.push({x:E1.x+xi*Math.cos(gamma)+eta*Math.sin(gamma),y:E1.y-xi*Math.sin(gamma)+eta*Math.cos(gamma)});}}else transition=[E2];const straightLen=Math.max(0,e-t-transitionLen);const S={x:E1.x-straightLen*Math.cos(gamma),y:E1.y+straightLen*Math.sin(gamma)};const straight=linePoints(S,E1,40);const table=linePoints(E2,{x:0,y:0},25);return {points:[...straight,...transition.slice(1),...table.slice(1)],marks:{S,E1,E2,T:{x:0,y:0}},transitionLen};}
+function lowerTransitionDefault(L,betaL,r2,N=100){if(!(r2>0)||!(betaL>0)){const U={x:L.x+Math.max(20,r2||20),y:L.y};return {points:linePoints(L,U,N),U,mode:'fallback'};}const C={x:L.x+r2*Math.sin(betaL),y:L.y+r2*Math.cos(betaL)};const U={x:C.x,y:C.y-r2};const a0=Math.atan2(L.y-C.y,L.x-C.x);const a1=-Math.PI/2;let da=a1-a0;while(da<=0)da+=Math.PI*2;if(da>Math.PI)da-=Math.PI*2;const out=[];for(let i=0;i<=N;i++){const a=a0+da*i/N;out.push({x:C.x+r2*Math.cos(a),y:C.y+r2*Math.sin(a)});}return {points:out,U,mode:'r2 → U automatyczne'};}
+function lowerTransitionToExactU(L,U,betaL,r2,N=110){const dx=U.x-L.x;if(!(dx>0))return {points:linePoints(L,U,N),mode:'bad-endpoint'};const points=hermiteX(L.x,L.y,-Math.tan(betaL),U.x,U.y,0,N);return {points,mode:'r2 + r2x/r2y → kubiczna L→U, U dokładne'};}
+
+// Arc length of eta=C*x^3. DSJ4 uses a cubic equation for the inrun transition.
+function cubicTransitionArcLength(d,C){
+  if(!(d>0)||!Number.isFinite(C))return 0;
+  const N=400; // even, Simpson integration
+  const f=x=>Math.sqrt(1+Math.pow(3*C*x*x,2));
+  let sum=f(0)+f(d);
+  const h=d/N;
+  for(let i=1;i<N;i++)sum+=(i%2?4:2)*f(i*h);
+  return sum*h/3;
+}
+
+function buildInrun(ir){
+  const alpha=deg(num(ir,'alpha',10)),gamma=deg(num(ir,'gamma',32));
+  const t=num(ir,'t',5),r1=num(ir,'r1',80),e=num(ir,'e',80);
+  const T={x:0,y:0};
+  // t is the straight takeoff/table section E2→T at angle alpha.
+  const E2={x:-t*Math.cos(alpha),y:t*Math.sin(alpha)};
+  const delta=Math.max(0,gamma-alpha);
+  let transition=[],E1={...E2},transitionLen=0;
+  if(r1>0&&delta>1e-8){
+    // Cubic parabola eta=C*xi^3. r1 is the curvature radius at E2.
+    const d=2*r1*Math.sin(delta)*Math.cos(delta)**2;
+    const C=Math.tan(delta)/(3*d*d);
+    const f=C*d*d*d;
+    transitionLen=cubicTransitionArcLength(d,C);
+    E1={
+      x:E2.x-d*Math.cos(gamma)-f*Math.sin(gamma),
+      y:E2.y+d*Math.sin(gamma)-f*Math.cos(gamma)
+    };
+    for(let i=0;i<=120;i++){
+      const xi=d*i/120,eta=C*xi**3;
+      transition.push({
+        x:E1.x+xi*Math.cos(gamma)+eta*Math.sin(gamma),
+        y:E1.y-xi*Math.sin(gamma)+eta*Math.cos(gamma)
+      });
+    }
+  }else transition=[E2];
+  // e = total inrun profile length; subtract exact cubic arc length and straight table t.
+  const straightLen=Math.max(0,e-t-transitionLen);
+  const A={x:E1.x-straightLen*Math.cos(gamma),y:E1.y+straightLen*Math.sin(gamma)};
+  const straight=linePoints(A,E1,50);
+  const table=linePoints(E2,T,30);
+  return {points:[...straight,...transition.slice(1),...table.slice(1)],marks:{A,S:A,E1,E2,T},transitionLen,tableLen:t};
+}
