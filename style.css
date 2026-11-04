@@ -80,3 +80,13 @@ textarea{width:100%;height:105px;background:#0a1020;color:#dce7f8;border:1px sol
 .x-comment{color:#65758f;font-style:italic}.x-punct{color:#a6b7d2}.x-number{color:#e69cff}
 .x-decl{color:#6fcfc4}.x-error{background:#6d2631;color:#fff}
 #xmlStatus{margin-top:7px;font-size:11px}.xml-valid{color:#8ce5b2}.xml-invalid{color:#ff8c98}
+
+/* Experimental 3D viewer */
+.viewer3d-card{margin:12px 0}
+.viewer3d-tag{font-size:11px;color:#9caec7;font-weight:500}
+.viewer3d-toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.viewer3d-toolbar label{display:flex;gap:6px;align-items:center;font-size:13px}
+.viewer3d-toolbar select{padding:5px 8px;background:#18233b;border:1px solid #344760;color:#e5edf7;border-radius:6px}
+#viewer3d{height:450px;width:100%;position:relative;overflow:hidden;border:1px solid #344760;border-radius:8px;background:#d8e6f0}
+#viewer3d canvas{display:block;width:100%;height:100%;touch-action:none}
+@media(max-width:700px){#viewer3d{height:330px}.viewer3d-toolbar{gap:6px}}
