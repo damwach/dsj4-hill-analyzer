@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>DSJ4 – podgląd 3D | Damian Wachnicki</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#141f32;--border:#2a3a53;--text:#eaf1fa;--muted:#96a9be;--accent:#70bbff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:14px 22px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border);background:#101b2d}
+header h1{font-size:18px;margin:0;letter-spacing:.1px}header .meta{font-size:12px;color:#9baec7;margin-left:auto}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:calc(100vh - 55px)}
+aside{padding:15px;background:var(--panel);border-right:1px solid var(--border);max-height:calc(100vh - 55px);overflow:auto}
+.section{border:1px solid var(--border);border-radius:9px;padding:13px;margin-bottom:13px;background:#111a2a}
+h2{font-size:13px;font-weight:700;color:#dfefff;margin:0 0 11px;text-transform:uppercase;letter-spacing:.055em}
+button,input[type=file]::file-selector-button{border:1px solid #34516e;background:#203754;color:#eaf1fa;border-radius:7px;padding:8px 10px;font:inherit;cursor:pointer}
+button:hover,input[type=file]::file-selector-button:hover{background:#305176}
+button.primary{background:#176ba3;border-color:#267db9}button.primary:hover{background:#2587c7}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}.btnrow button{flex:1}
+input[type=file]{width:100%;font-size:12px;color:#bbcbdd;margin-bottom:11px}
+input[type=range]{width:100%;accent-color:#56aeef}
+.number{width:82px;max-width:40%;background:#071120;color:#f4f9fc;border:1px solid #38506b;border-radius:5px;padding:5px 6px;text-align:right;font:inherit}
+.control{border-top:1px solid #253349;padding:9px 0}.control:first-child{border-top:0}.control label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:12px;color:#c3d7e8}
+.status{font-size:12px;line-height:1.55;color:var(--muted);margin-top:7px}#fileLabel{word-break:break-all;color:#9ee5c1}
+main{min-width:0;display:flex;flex-direction:column;position:relative}
+.canvas-bar{padding:11px 15px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.canvas-bar label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}.canvas-bar input{accent-color:#6cb9fc}.canvas-bar .right{margin-left:auto}
+.canvas-wrap{flex:1;min-height:410px;position:relative;overflow:hidden;background:linear-gradient(#a7d6f3 0%,#d9edf8 61%,#c4d0d5 100%)}
+#scene{width:100%;height:100%;display:block;touch-action:none;cursor:grab}#scene:active{cursor:grabbing}
+.hint{position:absolute;bottom:12px;left:12px;background:#0d1a2bdc;color:#d6e4ef;padding:8px 12px;border-radius:7px;font-size:12px;pointer-events:none}
+.corner{position:absolute;top:12px;right:12px;color:#0b3553;background:#eff9fbdc;padding:6px 11px;border-radius:6px;font-size:12px;pointer-events:none}
+.bottom{padding:12px 18px;background:#111c2e;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.bottom strong{color:#dfe8f2}
+@media(max-width:800px){.layout{display:flex;flex-direction:column}aside{max-height:none;overflow:visible;order:2}main{order:1}.canvas-wrap{height:58vh;min-height:360px}.meta{margin-left:0!important}}
+</style></head><body>
+<header><h1>DSJ4 Hill Designer <span style="color:#7ab9e3">/ podgląd 3D</span></h1><span class="meta">Prototyp offline · Autor: Damian Wachnicki</span></header>
+<div class="layout"><aside>
+<div class="section"><h2>1. Skocznia XML</h2><input id="file" type="file" accept=".xml,text/xml,application/xml"><div class="btnrow"><button id="demo" type="button">Wczytaj demo</button><button id="resetView" type="button">Dopasuj widok</button></div><div class="status">Plik: <span id="fileLabel">Skocznia przykładowa K120 / HS134</span></div><div id="message" class="status" role="status">Model gotowy.</div></div>
+<div class="section"><h2>2. Rozbieg</h2><div id="inrunControls"></div></div>
+<div class="section"><h2>3. Zeskok i szerokości</h2><div id="landingControls"></div></div>
+<div class="section"><h2>4. Plik</h2><div class="btnrow"><button id="saveXml" class="primary" type="button">Pobierz XML</button><button id="savePng" type="button">Zapisz PNG</button></div><div class="status">Zmiany parametrów aktualizują XML. Pozostałe elementy pliku zostają zachowane.</div></div>
+</aside><main>
+<div class="canvas-bar"><label><input id="showLines" type="checkbox" checked> Bandy / krawędzie</label><label><input id="showMarkers" type="checkbox" checked> P / K / HS</label><label><input id="showGrid" type="checkbox" checked> Siatka</label><div class="right" id="dimensions">K120 · HS134</div></div>
+<div class="canvas-wrap"><canvas id="scene"></canvas><div class="corner">Geometria 3D · uproszczona</div><div class="hint">Przeciągnij: obracanie · Kółko: zoom · PPM: przesuwanie</div></div>
+<div class="bottom"><strong>Zakres wersji:</strong> rozbieg, zeskok, szerokości, punkty i znaczniki. Podgląd nie odwzorowuje jeszcze terenu, konstrukcji nośnej, dekoracji ani modeli 3D zapisanych w pozostałych sekcjach XML.</div>
+</main></div>
+<script>
+'use strict';
+const DEMO = `<hill version="DSJ4-1.10.0"><inrun><profile e="91.5" es="15" t="6.43" gamma="33.5" alpha="10.5" r1="105" s="2.5" b1="2" z0="0" l="6.5" f="3"/></inrun><dhill><profile alpha="6.28" h="62.93" n="107.41" l1="16.04" l2="13.38" a="87.5" beta-p="37.7" beta="34.7" beta-l="32.2" rl="306.15" r2="73.22" b0="9.5" bk="23.37" ba="25" hr="10" nr="60" ar="10" k="120" hs="134"/></dhill></hill>`;
+const $ = id => document.getElementById(id);
+const canvas=$('scene'),ctx=canvas.getContext('2d');
+let xmlDoc,xmlSource='',ir={},dh={},geo=null,currentName='Skocznia przykladowa',drag=null;
+const cam={yaw:-0.65,pitch:0.50,distance:480,panX:0,panY:0,targetX:45,targetY:-35,base:1};
+const CONTROL_GROUPS={inrun:[['e','Rozbieg e (m)',25,220,.5],['t','Stolik t (m)',1,20,.05],['gamma','Nachylenie γ (°)',10,45,.1],['alpha','Kąt progu α (°)',0,20,.1],['r1','Promień r1 (m)',5,300,.5],['s','Wysokość progu s (m)',0,12,.05],['b1','Szerokość rozbiegu b1 (m)',.6,8,.1]],landing:[['n','K – odległość n (m)',20,350,.5],['h','K – spadek h (m)',5,220,.5],['beta-p','βP (°)',5,50,.1],['beta','βK (°)',5,50,.1],['beta-l','βL (°)',0,45,.1],['r2','Promień r2 (m)',5,300,.5],['a','Długość wybiegu a (m)',5,200,.5],['b0','Szerokość góry b0 (m)',2,30,.5],['bk','Szerokość K bk (m)',5,45,.5],['ba','Szerokość dołu ba (m)',5,50,.5]]};
+function deg(x){return Number(x)*Math.PI/180}function num(o,k,d=0){const n=Number(o[k]);return o[k]!==undefined && o[k]!=='' && Number.isFinite(n)?n:d}
+function attributes(el){const out={};for(const attr of el.attributes)out[attr.name]=attr.value;return out;}
+function line(a,b,n=30){return Array.from({length:n+1},(_,i)=>{let t=i/n;return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};});}
+function hermite(x0,y0,m0,x1,y1,m1,n=100){if(Math.abs(x1-x0)<1e-9)return line({x:x0,y:y0},{x:x1,y:y1},n);return Array.from({length:n+1},(_,i)=>{const t=i/n,dx=x1-x0;return {x:x0+t*dx,y:(2*t**3-3*t*t+1)*y0+(t**3-2*t*t+t)*dx*m0+(-2*t**3+3*t*t)*y1+(t**3-t*t)*dx*m1};});}
+function arc(p0,len,a0,a1,n=65){if(len<=0)return [p0];const pts=[{...p0}];let x=p0.x,y=p0.y;for(let i=1;i<=n;i++){const a=a0+(a1-a0)*(i-.5)/n;x+=Math.cos(a)*len/n;y-=Math.sin(a)*len/n;pts.push({x,y});}return pts;}
+function cubicArcLength(d,C){if(!(d>0))return 0;let v=0,N=400,h=d/N;for(let i=0;i<=N;i++){const x=i*h;v+=(i===0||i===N?1:i%2===0?2:4)*Math.sqrt(1+(3*C*x*x)**2);}return v*h/3;}
+function inrunGeometry(){const alpha=deg(num(ir,'alpha',10)),gamma=deg(num(ir,'gamma',32)),t=num(ir,'t',5),r1=num(ir,'r1',80),e=num(ir,'e',80);
+ const T={x:0,y:0},E2={x:-t*Math.cos(alpha),y:t*Math.sin(alpha)},delta=Math.max(0,gamma-alpha);let E1={...E2},tr=[E2],length=0;
+ if(r1>0&&delta>1e-8){const d=2*r1*Math.sin(delta)*Math.cos(delta)**2,C=Math.tan(delta)/(3*d*d),f=C*d*d*d;length=cubicArcLength(d,C);E1={x:E2.x-d*Math.cos(gamma)-f*Math.sin(gamma),y:E2.y+d*Math.sin(gamma)-f*Math.cos(gamma)};tr=Array.from({length:121},(_,i)=>{const xi=d*i/120,eta=C*xi**3;return {x:E1.x+xi*Math.cos(gamma)+eta*Math.sin(gamma),y:E1.y-xi*Math.sin(gamma)+eta*Math.cos(gamma)};});}
+ const straight=Math.max(0,e-t-length),A={x:E1.x-straight*Math.cos(gamma),y:E1.y+straight*Math.sin(gamma)};
+ return [...line(A,E1,50),...tr.slice(1),...line(E2,T,30).slice(1)];}
+function deriveP(K,l1,bp,bk){const d=bp-bk;if(!l1)return {...K};if(Math.abs(d)<1e-9)return {x:K.x-l1*Math.cos(bk),y:K.y+l1*Math.sin(bk)};const R=l1/d;return {x:K.x-R*(Math.sin(bp)-Math.sin(bk)),y:K.y-R*(Math.cos(bp)-Math.cos(bk))};}
+function deriveL(K,l2,bk,bl){const d=bk-bl;if(!l2)return {...K};if(Math.abs(d)<1e-9)return {x:K.x+l2*Math.cos(bk),y:K.y-l2*Math.sin(bk)};const R=l2/d;return {x:K.x+R*(Math.sin(bk)-Math.sin(bl)),y:K.y+R*(Math.cos(bk)-Math.cos(bl))};}
+function landingGeometry(){const B={x:0,y:-num(ir,'s',2.5)},K={x:num(dh,'n',100),y:-num(dh,'h',55)},bp=deg(num(dh,'beta-p',35)),bk=deg(num(dh,'beta',33)),bl=deg(num(dh,'beta-l',30)),l1=num(dh,'l1',0),l2=num(dh,'l2',0);
+ const exact=(a,b,a2,b2)=>dh[a]!==undefined&&dh[b]!==undefined||dh[a2]!==undefined&&dh[b2]!==undefined;
+ const P=exact('n-p','h-p','np','hp')?{x:num(dh,'n-p',num(dh,'np')),y:-num(dh,'h-p',num(dh,'hp'))}:deriveP(K,l1,bp,bk);
+ const L=exact('n-l','h-l','nl','hl')?{x:num(dh,'n-l',num(dh,'nl')),y:-num(dh,'h-l',num(dh,'hl'))}:deriveL(K,l2,bk,bl);
+ let pts=hermite(B.x,B.y,-Math.tan(deg(num(dh,'alpha',6))),P.x,P.y,-Math.tan(bp),120);
+ let PK=exact('n-p','h-p','np','hp')?hermite(P.x,P.y,-Math.tan(bp),K.x,K.y,-Math.tan(bk),65):arc(P,l1,bp,bk,65);PK[PK.length-1]={...K};pts.push(...PK.slice(1));
+ let KL=exact('n-l','h-l','nl','hl')?hermite(K.x,K.y,-Math.tan(bk),L.x,L.y,-Math.tan(bl),65):arc(K,l2,bk,bl,65);KL[KL.length-1]={...L};pts.push(...KL.slice(1));
+ const r2=num(dh,'r2',60),center={x:L.x+r2*Math.sin(bl),y:L.y+r2*Math.cos(bl)},defaultU={x:center.x,y:center.y-r2};let U=defaultU,trans=[];
+ if(dh.r2x!==undefined||dh.r2y!==undefined){U={x:L.x+num(dh,'r2x',defaultU.x-L.x),y:L.y-num(dh,'r2y',L.y-defaultU.y)};trans=hermite(L.x,L.y,-Math.tan(bl),U.x,U.y,0,100);}
+ else if(r2>0&&bl>0){const start=Math.atan2(L.y-center.y,L.x-center.x),end=-Math.PI/2;let d=end-start;while(d<=0)d+=Math.PI*2;if(d>Math.PI)d-=Math.PI*2;trans=Array.from({length:101},(_,i)=>{const a=start+d*i/100;return {x:center.x+r2*Math.cos(a),y:center.y+r2*Math.sin(a)};});}
+ else trans=line(L,U,100);
+ pts.push(...trans.slice(1));const end={x:U.x+Math.max(0,num(dh,'a',70)),y:U.y};pts.push(...line(U,end,70).slice(1));return {points:pts,K,P,L,U,end};}
+function pointAtDistance(pts,d){if(!Number.isFinite(d)||d<0)return null;let acc=0;for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],ds=Math.hypot(b.x-a.x,b.y-a.y);if(acc+ds>=d){const t=ds?(d-acc)/ds:0;return {x:a.x+t*(b.x-a.x),y:a.y+t*(b.y-a.y)};}acc+=ds;}return null;}
+function width(x){const d=geo.landing;const b0=Math.max(1,num(dh,'b0',9)),bk=Math.max(1,num(dh,'bk',20)),ba=Math.max(1,num(dh,'ba',22));const interpolate=(x,x0,v0,x1,v1)=>v0+(v1-v0)*Math.max(0,Math.min(1,(x-x0)/Math.max(.0001,x1-x0)));return x<=d.K.x?interpolate(x,0,b0,d.K.x,bk):interpolate(x,d.K.x,bk,d.end.x,ba);}
+function parse(xml,filename){const doc=new DOMParser().parseFromString(xml,'text/xml');if(doc.querySelector('parsererror'))throw Error('Nieprawidłowa składnia XML');const a=doc.querySelector('inrun > profile'),b=doc.querySelector('dhill > profile');if(!a||!b)throw Error('Brak inrun/profile lub dhill/profile w pliku XML');xmlDoc=doc;xmlSource=xml;ir=attributes(a);dh=attributes(b);currentName=filename;build();drawControls();$('fileLabel').textContent=filename;$('message').textContent='Wczytano XML. Podgląd odświeżony.';fit();}
+function build(){const inrun=inrunGeometry(),landing=landingGeometry();geo={inrun,landing};const pts=[...inrun,...landing.points];geo.bounds={minX:Math.min(...pts.map(p=>p.x)),maxX:Math.max(...pts.map(p=>p.x)),minY:Math.min(...pts.map(p=>p.y)),maxY:Math.max(...pts.map(p=>p.y))};$('dimensions').textContent='K'+num(dh,'k',0)+' · HS'+num(dh,'hs',0);render();}
+function drawControls(){for(const [scope,arr,id] of [['inrun',CONTROL_GROUPS.inrun,'inrunControls'],['landing',CONTROL_GROUPS.landing,'landingControls']]){$(id).replaceChildren();const obj=scope==='inrun'?ir:dh;for(const [key,label,min,max,step] of arr){if(obj[key]===undefined)continue;const v=num(obj,key);const row=document.createElement('div');row.className='control';const labelEl=document.createElement('label');labelEl.textContent=label;const number=document.createElement('input');number.type='number';number.className='number';number.step=String(step);number.value=String(v);const range=document.createElement('input');range.type='range';range.min=String(Math.min(min,Math.floor(v)));range.max=String(Math.max(max,Math.ceil(v)));range.step=String(step);range.value=String(v);labelEl.append(number);row.append(labelEl,range);$(id).append(row);const change=(value,origin)=>{const n=Number(value);if(!Number.isFinite(n))return;obj[key]=String(n);xmlDoc.querySelector(scope==='inrun'?'inrun > profile':'dhill > profile').setAttribute(key,String(n));if(origin!==range){range.min=String(Math.min(min,n));range.max=String(Math.max(max,n));range.value=String(n);}if(origin!==number)number.value=String(n);build();};range.addEventListener('input',()=>change(range.value,range));number.addEventListener('input',()=>change(number.value,number));}}}
+function fit(){if(!geo)return;const b=geo.bounds;cam.targetX=(b.minX+b.maxX)/2;cam.targetY=(b.minY+b.maxY)/2;cam.distance=Math.max(150,(b.maxX-b.minX)*1.5);cam.panX=0;cam.panY=0;render();}
+function project(x,y,z){const dx=x-cam.targetX,dz=z,dy=y-cam.targetY;const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);const lateral=dx*cy-dz*sy;const depthHorizontal=dx*sy+dz*cy;const depth=depthHorizontal*cp+dy*sp;const vertical=dy*cp-depthHorizontal*sp;const w=canvas.clientWidth,h=canvas.clientHeight;const f=cam.base*Math.min(w*1.2,h*1.55)/(cam.distance+Math.max(-cam.distance*.8,depth));return {x:w*.5+lateral*f+cam.panX,y:h*.51-vertical*f+cam.panY,depth};}
+function quadRender(quads){quads.sort((a,b)=>b.depth-a.depth);for(const q of quads){ctx.beginPath();ctx.moveTo(q.p[0].x,q.p[0].y);for(let i=1;i<4;i++)ctx.lineTo(q.p[i].x,q.p[i].y);ctx.closePath();ctx.fillStyle=q.color;ctx.fill();if(q.stroke){ctx.strokeStyle=q.stroke;ctx.lineWidth=.65;ctx.stroke();}}}
+function drawLine(points,color,width=2){if(points.length<2)return;ctx.beginPath();for(let i=0;i<points.length;i++){const p=points[i];i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
+function ribbon(quads,pts,fn,kind){for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],aw=fn(a.x)/2,bw=fn(b.x)/2;const p=[project(a.x,a.y,-aw),project(a.x,a.y,aw),project(b.x,b.y,bw),project(b.x,b.y,-bw)];quads.push({p,depth:p.reduce((a,b)=>a+b.depth,0)/4,color:kind==='land'?(i%2===0?'#eef6fa':'#e5eef3'):(i%2===0?'#637f98':'#6f8da4'),stroke:null});}}
+function line3d(a,b,color,width=2){drawLine([project(...a),project(...b)],color,width);}
+function render(){if(!geo)return;resizeCanvas();const w=canvas.clientWidth,h=canvas.clientHeight;ctx.clearRect(0,0,w,h);const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#9bcce9');bg.addColorStop(.62,'#dcf1fd');bg.addColorStop(1,'#b8d0d8');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+ const b=geo.bounds,groundY=b.minY-8;
+ if($('showGrid').checked){for(let x=Math.floor((b.minX-60)/30)*30;x<b.maxX+80;x+=30){const p1=project(x,groundY,-55),p2=project(x,groundY,55);drawLine([p1,p2],'#94b2bb66',1);}for(let z=-60;z<=60;z+=15){drawLine([project(b.minX-70,groundY,z),project(b.maxX+80,groundY,z)],'#94b2bb66',1);}}
+ const quads=[];ribbon(quads,geo.inrun,()=>Math.max(.6,num(ir,'b1',2)),'inrun');ribbon(quads,geo.landing.points,width,'land');quadRender(quads);
+ if($('showLines').checked){for(const [pts,fn,col] of [[geo.inrun,()=>Math.max(.6,num(ir,'b1',2)),'#183d56'],[geo.landing.points,width,'#2f7796']])for(const s of [-1,1]){drawLine(pts.map(p=>project(p.x,p.y+.1,s*fn(p.x)/2)),col,1.7);}}
+ if($('showMarkers').checked){for(const [key,col] of [['p','#3c94cd'],['k','#ea4e54'],['hs','#efa032']]){const d=num(dh,key,NaN),p=pointAtDistance(geo.landing.points,d);if(!p)continue;line3d([p.x,p.y+.14,-width(p.x)/2],[p.x,p.y+.14,width(p.x)/2],col,3);const lp=project(p.x,p.y+3,width(p.x)/2+7);ctx.font='bold 12px system-ui';const title=key.toUpperCase()+' '+d;const tw=ctx.measureText(title).width;ctx.fillStyle='#15283bdd';ctx.fillRect(lp.x-5,lp.y-15,tw+10,21);ctx.fillStyle='#fff';ctx.fillText(title,lp.x,lp.y);}}
+}
+function resizeCanvas(){const dpr=Math.min(2,devicePixelRatio||1),width=Math.round(canvas.clientWidth*dpr),height=Math.round(canvas.clientHeight*dpr);if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}ctx.setTransform(dpr,0,0,dpr,0,0);}
+function download(text,name,type){const a=document.createElement('a');const url=URL.createObjectURL(new Blob([text],{type}));a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);}
+$('file').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{parse(await file.text(),file.name);}catch(err){$('message').textContent='Błąd: '+err.message;}});
+$('demo').onclick=()=>parse(DEMO,'Skocznia przykładowa K120 / HS134');$('resetView').onclick=fit;
+$('saveXml').onclick=()=>download(new XMLSerializer().serializeToString(xmlDoc),currentName.replace(/\.xml$/i,'')+'-edited.xml','application/xml;charset=utf-8');
+$('savePng').onclick=()=>{render();const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='dsj4-podglad-3d.png';a.click();};
+for(const id of ['showLines','showMarkers','showGrid'])$(id).addEventListener('change',render);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,button:e.button};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;if(drag.button===2){cam.panX+=dx;cam.panY+=dy;}else{cam.yaw+=dx*.006;cam.pitch=Math.max(-.2,Math.min(1.45,cam.pitch+dy*.005));}render();});
+canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
+canvas.addEventListener('wheel',e=>{e.preventDefault();cam.base=Math.max(.25,Math.min(5,cam.base*Math.exp(-e.deltaY*.001)));render();},{passive:false});
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(render).observe(canvas.parentElement);else window.addEventListener('resize',render);
+parse(DEMO,'Skocznia przykładowa K120 / HS134');
+</script></body></html>
