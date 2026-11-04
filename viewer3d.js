@@ -227,8 +227,8 @@
     try {
       setStatus("Ładowanie silnika 3D...");
       const modules = await Promise.all([
-        import("https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"),
-        import("https://esm.sh/three@0.180.0/examples/jsm/controls/OrbitControls.js")
+        import("three"),
+        import("three/addons/controls/OrbitControls.js")
       ]);
       THREE = modules[0];
       const OrbitControls = modules[1].OrbitControls;
